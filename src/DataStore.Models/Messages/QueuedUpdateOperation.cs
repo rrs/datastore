@@ -10,18 +10,19 @@
     {
         public QueuedUpdateOperation(string methodCalled, T model, IDocumentRepository repo, IMessageAggregator messageAggregator)
         {
-            CommitClosure = async () =>
+            CommitClosure = () =>
                 {
-                await messageAggregator.CollectAndForward(
+                return messageAggregator.CollectAndForward(
                     new UpdateOperation<T>
                     {
                         TypeName = typeof(T).FullName,
                         MethodCalled = methodCalled,
                         Created = DateTime.UtcNow,
                         Model = model
-                    }).To(repo.UpdateAsync).ConfigureAwait(false);
-
-                Committed = true;
+                    }).To(repo.UpdateAsync).ContinueWith(t =>
+                    {
+                        Committed = true;
+                    });
                 };
 
             Created = DateTime.UtcNow;

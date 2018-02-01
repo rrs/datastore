@@ -59,11 +59,11 @@
             return new DataStoreWriteOnly<T>(DsConnection, this.messageAggregator);
         }
 
-        public async Task CommitChanges()
+        public Task CommitChanges()
         {
             var dataStoreEvents = this.messageAggregator.AllMessages.OfType<IQueuedDataStoreWriteOperation>().Where(e => !e.Committed).ToList();
 
-            foreach (var dataStoreWriteEvent in dataStoreEvents) await dataStoreWriteEvent.CommitClosure().ConfigureAwait(false);
+            return QueuedStateChangeHelper.Iterate(dataStoreEvents);
         }
 
         public Task<T> Create<T>(T model, bool readOnly = false) where T : class, IAggregate, new()

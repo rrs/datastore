@@ -40,7 +40,9 @@ namespace DataStore
 
             //for the same reason as the above we want a new object, but we want to return the enriched one, so we clone it,
             //essentially no external client should be able to get a reference to the instance we use internally
-            return Task.FromResult(newObject.Clone());
+            var clone = newObject.Clone();
+
+            return TaskShim.FromResult(clone);
         }
 
         internal static void ForceProperties<T>(bool readOnly, T enriched) where T : class, IAggregate, new()

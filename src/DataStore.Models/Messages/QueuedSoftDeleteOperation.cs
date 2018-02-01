@@ -10,18 +10,19 @@
     {
         public QueuedSoftDeleteOperation(string methodCalled, T model, IDocumentRepository repo, IMessageAggregator messageAggregator)
         {
-            CommitClosure = async () =>
+            CommitClosure = () =>
                 {
-                await messageAggregator.CollectAndForward(
+                return messageAggregator.CollectAndForward(
                     new SoftDeleteOperation<T>
                     {
                         TypeName = typeof(T).FullName,
                         MethodCalled = methodCalled,
                         Created = DateTime.UtcNow,
                         Model = model
-                    }).To(repo.DeleteSoftAsync).ConfigureAwait(false);
-
-                Committed = true;
+                    }).To(repo.DeleteSoftAsync).ContinueWith(t =>
+                    {
+                        Committed = true;
+                    });
                 };
 
             Created = DateTime.UtcNow;

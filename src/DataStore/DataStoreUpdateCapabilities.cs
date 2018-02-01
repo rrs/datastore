@@ -43,31 +43,35 @@
         }
 
         // update a DataObject selected with a singular predicate
-        public async Task<IEnumerable<T>> UpdateWhere<T>(Expression<Func<T, bool>> predicate, Action<T> action, bool overwriteReadOnly = false)
+        public Task<IEnumerable<T>> UpdateWhere<T>(Expression<Func<T, bool>> predicate, Action<T> action, bool overwriteReadOnly = false)
             where T : class, IAggregate, new()
         {
-            var objectsToUpdate =
-                await this.eventAggregator.CollectAndForward(
+            return eventAggregator.CollectAndForward(
                               new AggregatesQueriedOperation<T>(nameof(UpdateWhere), DsConnection.CreateDocumentQuery<T>().Where(predicate)))
-                          .To(DsConnection.ExecuteQuery).ConfigureAwait(false);
-
-            return UpdateInternal(action, overwriteReadOnly, objectsToUpdate);
+                          .To(DsConnection.ExecuteQuery).ContinueWith(t => 
+                          {
+                              var objectsToUpdate = t.Result;
+                              return UpdateInternal(action, overwriteReadOnly, objectsToUpdate);
+                          });
         }
 
-        private async Task<T> UpdateByIdInternal<T>(Guid id, Action<T> action, bool overwriteReadOnly) where T : class, IAggregate, new()
+        private Task<T> UpdateByIdInternal<T>(Guid id, Action<T> action, bool overwriteReadOnly) where T : class, IAggregate, new()
         {
-            var objectToUpdate = await this.eventAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(UpdateById), id, typeof(T)))
-                                           .To(DsConnection.GetItemAsync<T>).ConfigureAwait(false);
+            return eventAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(UpdateById), id, typeof(T)))
+                                           .To(DsConnection.GetItemAsync<T>).ContinueWith(t => 
+                                           {
+                                               var objectToUpdate = t.Result;
+                                               var list = new List<T>().Op(
+                                                l =>
+                                                {
+                                                    if (objectToUpdate != null) l.Add(objectToUpdate);
+                                                });
+                                               //can't just return null here because we need to reply previous events the object might have been added previously
 
-            var list = new List<T>().Op(
-                l =>
-                    {
-                    if (objectToUpdate != null) l.Add(objectToUpdate);
-                    });
+                                               return UpdateInternal(action, overwriteReadOnly, list).SingleOrDefault();
+                                           });
 
-            //can't just return null here because we need to reply previous events the object might have been added previously
 
-            return UpdateInternal(action, overwriteReadOnly, list).SingleOrDefault();
         }
 
         private IEnumerable<T> UpdateInternal<T>(Action<T> action, bool overwriteReadOnly, IEnumerable<T> objects) where T : class, IAggregate, new()

@@ -1,6 +1,6 @@
 ﻿namespace DataStore.Interfaces
 {
-    using System.Collections.Generic;
+    using CircuitBoard;
     using CircuitBoard.Permissions;
     using DataStore.Interfaces.LowLevel;
 

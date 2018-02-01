@@ -10,18 +10,19 @@
     {
         public QueuedHardDeleteOperation(string methodCalled, T model, IDocumentRepository repo, IMessageAggregator messageAggregator)
         {
-            CommitClosure = async () =>
+            CommitClosure = () =>
                 {
-                await messageAggregator.CollectAndForward(
+                return messageAggregator.CollectAndForward(
                     new HardDeleteOperation<T>
                     {
                         TypeName = typeof(T).FullName,
                         MethodCalled = methodCalled,
                         Created = DateTime.UtcNow,
                         Model = model
-                    }).To(repo.DeleteHardAsync).ConfigureAwait(false);
-
-                Committed = true;
+                    }).To(repo.DeleteHardAsync).ContinueWith(t => 
+                    {
+                        Committed = true;
+                    });
                 };
 
             Created = DateTime.UtcNow;

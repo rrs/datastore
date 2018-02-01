@@ -35,11 +35,11 @@
 
         private DataStoreUpdateCapabilities UpdateCapabilities { get; }
 
-        public async Task CommitChanges()
+        public Task CommitChanges()
         {
             var dataStoreEvents = this.messageAggregator.AllMessages.OfType<IQueuedDataStoreWriteOperation>();
 
-            foreach (var dataStoreWriteEvent in dataStoreEvents) await dataStoreWriteEvent.CommitClosure().ConfigureAwait(false);
+            return QueuedStateChangeHelper.Iterate(dataStoreEvents);
         }
 
         public Task<T> Create(T model, bool readOnly = false)

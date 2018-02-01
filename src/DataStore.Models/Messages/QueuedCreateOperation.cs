@@ -10,18 +10,19 @@ namespace DataStore.Models.Messages
     {
         public QueuedCreateOperation(string methodCalled, T model, IDocumentRepository repo, IMessageAggregator messageAggregator)
         {
-            CommitClosure = async () =>
+            CommitClosure = () =>
                 {
-                await messageAggregator.CollectAndForward(
+                return messageAggregator.CollectAndForward(
                     new CreateOperation<T>
                     {
                         TypeName = typeof(T).FullName,
                         MethodCalled = methodCalled,
                         Created = DateTime.UtcNow,
                         Model = model
-                    }).To(repo.AddAsync).ConfigureAwait(false);
-
-                Committed = true;
+                    }).To(repo.AddAsync).ContinueWith(t =>
+                    {
+                        Committed = true;
+                    });
                 };
 
             Created = DateTime.UtcNow;

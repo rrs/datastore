@@ -16,7 +16,7 @@
         {
             Aggregates.Add(aggregateAdded.Model);
 
-            return Task.CompletedTask;
+            return TaskShim.CompletedTask;
         }
 
         public IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
@@ -29,7 +29,7 @@
         {
             Aggregates.RemoveAll(a => a.id == aggregateHardDeleted.Model.id);
 
-            return Task.CompletedTask;
+            return TaskShim.CompletedTask;
         }
 
         public Task DeleteSoftAsync<T>(IDataStoreWriteOperation<T> aggregateSoftDeleted) where T : class, IAggregate, new()
@@ -41,7 +41,7 @@
             aggregate.Modified = now;
             aggregate.ModifiedAsMillisecondsEpochTime = now.ConvertToMillisecondsEpochTime();
 
-            return Task.CompletedTask;
+            return TaskShim.CompletedTask;
         }
 
         public void Dispose()
@@ -54,12 +54,14 @@
             //clone otherwise its to easy to change the referenced object in test code affecting results
             var result = aggregatesQueried.Query.ToList().CloneEnumerable();
 
-            return Task.FromResult(result);
+            return TaskShim.FromResult(result);
         }
 
         public Task<bool> Exists(IDataStoreReadById aggregateQueriedById)
         {
-            return Task.FromResult(Aggregates.Exists(a => a.id == aggregateQueriedById.Id));
+            var result = Aggregates.Exists(a => a.id == aggregateQueriedById.Id);
+
+            return TaskShim.FromResult(result);
         }
 
         public Task<T> GetItemAsync<T>(IDataStoreReadById aggregateQueriedById) where T : class, IAggregate, new()
@@ -67,7 +69,9 @@
             var aggregate = Aggregates.Where(x => x.schema == typeof(T).FullName).Cast<T>().SingleOrDefault(a => a.id == aggregateQueriedById.Id);
 
             //clone otherwise its to easy to change the referenced object in test code affecting results
-            return Task.FromResult(aggregate?.Clone());
+            var clone = aggregate?.Clone();
+
+            return TaskShim.FromResult(clone);
         }
 
         public Task UpdateAsync<T>(IDataStoreWriteOperation<T> aggregateUpdated) where T : class, IAggregate, new()
@@ -76,7 +80,7 @@
 
             aggregateUpdated.Model.CopyProperties(toUpdate);
 
-            return Task.CompletedTask;
+            return TaskShim.CompletedTask;
         }
     }
 }

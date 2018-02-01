@@ -27,62 +27,66 @@
 
         private IDocumentRepository DbConnection { get; }
 
-        public async Task<bool> Exists(Guid id)
+        public Task<bool> Exists(Guid id)
         {
-            if (id == Guid.Empty) return false;
+            if (id == Guid.Empty) return TaskShim.FromResult(false);
 
-            if (HasBeenHardDeletedInThisSession(id)) return false;
+            if (HasBeenHardDeletedInThisSession(id)) return TaskShim.FromResult(false);
 
-            return await this.messageAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(Exists), id)).To(DbConnection.Exists)
-                             .ConfigureAwait(false);
+            return this.messageAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(Exists), id)).To(DbConnection.Exists);
         }
 
         // get a filtered list of the models from set of DataObjects
-        public async Task<IEnumerable<T>> Read<T>(Expression<Func<T, bool>> predicate = null) where T : class, IAggregate, new()
+        public Task<IEnumerable<T>> Read<T>(Expression<Func<T, bool>> predicate = null) where T : class, IAggregate, new()
         {
             var queryable = DbConnection.CreateDocumentQuery<T>();
 
             if (predicate != null) queryable = queryable.Where(predicate);
 
-            var results = await this.messageAggregator.CollectAndForward(new AggregatesQueriedOperation<T>(nameof(ReadActiveById), queryable))
-                                    .To(DbConnection.ExecuteQuery).ConfigureAwait(false);
+            var results = this.messageAggregator.CollectAndForward(new AggregatesQueriedOperation<T>(nameof(ReadActiveById), queryable))
+                                    .To(DbConnection.ExecuteQuery)
+                                    .ContinueWith(t => eventReplay.ApplyAggregateEvents(t.Result, false).AsEnumerable());
 
-            return this.eventReplay.ApplyAggregateEvents(results, false);
+            return results;
         }
 
         // get a filtered list of the models from a set of active DataObjects
-        public async Task<IEnumerable<T>> ReadActive<T>(Expression<Func<T, bool>> predicate = null) where T : class, IAggregate, new()
+        public Task<IEnumerable<T>> ReadActive<T>(Expression<Func<T, bool>> predicate = null) where T : class, IAggregate, new()
         {
             var queryable = DbConnection.CreateDocumentQuery<T>().Where(a => a.Active);
 
             if (predicate != null) queryable = queryable.Where(predicate);
 
-            var results = await this.messageAggregator.CollectAndForward(new AggregatesQueriedOperation<T>(nameof(ReadActiveById), queryable))
-                                    .To(DbConnection.ExecuteQuery).ConfigureAwait(false);
+            var results = this.messageAggregator.CollectAndForward(new AggregatesQueriedOperation<T>(nameof(ReadActiveById), queryable))
+                                    .To(DbConnection.ExecuteQuery)
+                                    .ContinueWith(t => eventReplay.ApplyAggregateEvents(t.Result, true).AsEnumerable());
 
-            return this.eventReplay.ApplyAggregateEvents(results, true);
+            return results;
         }
 
         // get a filtered list of the models from  a set of DataObjects
-        public async Task<T> ReadActiveById<T>(Guid modelId) where T : class, IAggregate, new()
+        public Task<T> ReadActiveById<T>(Guid modelId) where T : class, IAggregate, new()
         {
             if (modelId == Guid.Empty) return null;
 
-            var result = await this.messageAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(ReadActiveById), modelId))
-                                   .To(DbConnection.GetItemAsync<T>).ConfigureAwait(false);
+            var result = this.messageAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(ReadActiveById), modelId))
+                                   .To(DbConnection.GetItemAsync<T>).ContinueWith(t => 
+                                   {
+                                       if (t.Result == null || !t.Result.Active)
+                                       {
+                                           var replayResult = this.eventReplay.ApplyAggregateEvents(new List<T>(), true).SingleOrDefault();
+                                           return replayResult;
+                                       }
 
-            if (result == null || !result.Active)
-            {
-                var replayResult = this.eventReplay.ApplyAggregateEvents(new List<T>(), true).SingleOrDefault();
-                return replayResult;
-            }
-
-            return this.eventReplay.ApplyAggregateEvents(
-                new List<T>
-                {
-                    result
-                },
-                true).SingleOrDefault();
+                                       return this.eventReplay.ApplyAggregateEvents(
+                                        new List<T>
+                                        {
+                                            t.Result
+                                        },
+                                        true).SingleOrDefault();
+                                   });
+            return result;
+            
         }
 
         private bool HasBeenHardDeletedInThisSession(Guid id)
