@@ -9,13 +9,15 @@ namespace DataStore
     {
         public static Task Iterate(IEnumerable<IQueuedStateChange> changes)
         {
-            var task = new Task(() => { });
-            task.RunSynchronously();
+            var task = TaskShim.CompletedTask;
+            if (changes.Any())
+            {
+                var query = from action in changes
+                            select (task = task.ContinueWith(t => action.CommitClosure()));
+                task = query.Last();
+            }
 
-            var query = from action in changes
-                        select (task = task.ContinueWith(t => action.CommitClosure()));
-
-            return query.LastOrDefault();
+            return task;
         }
     }
 }

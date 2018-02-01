@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace DataStore
 {
-    class TaskShim
+    public static class TaskShim
     {
-
-
         public static Task<T> FromResult<T>(T value)
         {
             var tcs = new TaskCompletionSource<T>();

@@ -23,7 +23,7 @@
             SqlServerDbInitialiser.Initialise(this.clientFactory, settings);
         }
 
-        public Task AddAsync<T>(IDataStoreWriteOperation<T> aggregateAdded) where T : class, IAggregate, new()
+        public async Task AddAsync<T>(IDataStoreWriteOperation<T> aggregateAdded) where T : class, IAggregate, new()
         {
             using (var con = this.clientFactory.OpenClient())
             {
@@ -38,7 +38,7 @@
                     var json = JsonConvert.SerializeObject(aggregateAdded.Model);
                     command.Parameters.Add(new SqlParameter("Json", json));
 
-                    return Task.Factory.FromAsync(command.BeginExecuteNonQuery, command.EndExecuteNonQuery, null);
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -66,7 +66,7 @@
             return query.AsQueryable();
         }
 
-        public Task DeleteHardAsync<T>(IDataStoreWriteOperation<T> aggregateHardDeleted) where T : class, IAggregate, new()
+        public async Task DeleteHardAsync<T>(IDataStoreWriteOperation<T> aggregateHardDeleted) where T : class, IAggregate, new()
         {
             using (var con = this.clientFactory.OpenClient())
             {
@@ -74,12 +74,12 @@
                 {
                     command.Parameters.Add(new SqlParameter("AggregateId", aggregateHardDeleted.Model.id));
 
-                    return Task.Factory.FromAsync(command.BeginExecuteNonQuery, command.EndExecuteNonQuery, null);
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
         }
 
-        public Task DeleteSoftAsync<T>(IDataStoreWriteOperation<T> aggregateSoftDeleted) where T : class, IAggregate, new()
+        public async Task DeleteSoftAsync<T>(IDataStoreWriteOperation<T> aggregateSoftDeleted) where T : class, IAggregate, new()
         {
             using (var connection = this.clientFactory.OpenClient())
             {
@@ -96,7 +96,7 @@
                     var json = JsonConvert.SerializeObject(aggregateSoftDeleted.Model);
                     command.Parameters.Add(new SqlParameter("Json", json));
 
-                    return Task.Factory.FromAsync(command.BeginExecuteNonQuery, command.EndExecuteNonQuery, null);
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -110,26 +110,25 @@
         {
             var results = aggregatesQueried.Query.ToList();
 
-            return TaskShim.FromResult(results.AsEnumerable());
+            return Task.FromResult(results.AsEnumerable());
         }
 
-        public Task<bool> Exists(IDataStoreReadById aggregateQueriedById)
+        public async Task<bool> Exists(IDataStoreReadById aggregateQueriedById)
         {
             var id = aggregateQueriedById.Id;
 
+            string result;
             using (var connection = this.clientFactory.OpenClient())
             {
                 using (var command = new SqlCommand(
                     $"SELECT AggregateId FROM {this.settings.TableName} WHERE AggregateId = CONVERT(uniqueidentifier, '{id}')",
                     connection))
                 {
-                    return Task.Factory.FromAsync(command.BeginExecuteReader, command.EndExecuteReader, null).ContinueWith(t => 
-                    {
-                        var result = t.Result;
-                        return result != null;
-                    });
+                    result = (await command.ExecuteScalarAsync().ConfigureAwait(false))?.ToString();
                 }
             }
+
+            return result != null;
         }
 
         public Task<T> GetItemAsync<T>(IDataStoreReadById aggregateQueriedById) where T : class, IAggregate, new()
@@ -138,10 +137,10 @@
             //       retrieving large recordsets, therefore we use the sync implementation.
 
             var result = GetItem<T>(aggregateQueriedById);
-            return TaskShim.FromResult(result);
+            return Task.FromResult(result);
         }
 
-        public Task UpdateAsync<T>(IDataStoreWriteOperation<T> aggregateUpdated) where T : class, IAggregate, new()
+        public async Task UpdateAsync<T>(IDataStoreWriteOperation<T> aggregateUpdated) where T : class, IAggregate, new()
         {
             using (var connection = this.clientFactory.OpenClient())
             {
@@ -154,7 +153,7 @@
                     var json = JsonConvert.SerializeObject(aggregateUpdated.Model);
                     command.Parameters.Add(new SqlParameter("Json", json));
 
-                    return Task.Factory.FromAsync(command.BeginExecuteNonQuery, command.EndExecuteNonQuery, null);
+                    await command.ExecuteNonQueryAsync().ConfigureAwait(false);
                 }
             }
         }
