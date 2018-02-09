@@ -13,5 +13,7 @@
         Task<IEnumerable<T2>> ReadCommitted<T, T2>(Func<IQueryable<T>, IQueryable<T2>> queryableExtension) where T : class, IAggregate, new();
 
         Task<T> ReadCommittedById<T>(Guid modelId) where T : class, IAggregate, new();
+
+        Task<IDataStoreChanges<T>> ReadChanged<T>(string continuationToken) where T : class, IAggregate, new();
     }
 }

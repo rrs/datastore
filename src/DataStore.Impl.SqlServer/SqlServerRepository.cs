@@ -1,14 +1,16 @@
 ﻿namespace DataStore.Impl.SqlServer
 {
+    using DataStore.Interfaces;
+    using DataStore.Interfaces.LowLevel;
+    using DataStore.Models;
+    using DataStore.Models.PureFunctions.Extensions;
+    using Newtonsoft.Json;
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
-    using DataStore.Interfaces;
-    using DataStore.Interfaces.LowLevel;
-    using DataStore.Models.PureFunctions.Extensions;
-    using Newtonsoft.Json;
 
     public class SqlServerRepository : IDocumentRepository
     {
@@ -154,6 +156,40 @@
                     command.Parameters.Add(new SqlParameter("Json", json));
 
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+                }
+            }
+        }
+
+        public async Task<IDataStoreChanges<T>> GetChangedSinceToken<T>(IDataStoreReadChanges aggregateQueriedByToken) where T : class, IAggregate, new()
+        {
+            var schema = typeof(T).FullName;
+
+            var query = new List<T>();
+
+            var rowVersion = string.IsNullOrEmpty(aggregateQueriedByToken.Token) 
+                ? new byte[8] 
+                : Convert.FromBase64String(aggregateQueriedByToken.Token);
+
+            using (var connection = this.clientFactory.OpenClient())
+            {
+                using (var command = new SqlCommand($"SELECT Json, Version FROM {this.settings.TableName} WHERE [Schema] = '{schema}' AND Version > @RowVersion", connection))
+                {
+                    command.Parameters.Add(new SqlParameter("RowVersion", rowVersion));
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        byte[] highestRowVersion = rowVersion;
+
+                        while (reader.Read())
+                        {
+                            var json = reader.GetString(0);
+                            var rowVer = (byte[])reader.GetValue(1);
+                            if (((IStructuralComparable)rowVer).CompareTo(highestRowVersion, Comparer<byte>.Default) > 0) highestRowVersion = rowVer;
+                            query.Add(JsonConvert.DeserializeObject<T>(json));
+                        }
+
+                        return new DataStoreChanges<T>(query, Convert.ToBase64String(highestRowVersion));
+                    }
                 }
             }
         }

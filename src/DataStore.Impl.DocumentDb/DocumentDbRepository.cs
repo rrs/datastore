@@ -14,6 +14,8 @@
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Converters;
 
     public class DocumentDbRepository : IDocumentRepository
     {
@@ -170,6 +172,108 @@
 
             var docLink = UriFactory.CreateDocumentUri(this.config.DatabaseName, this.config.CollectionSettings.CollectionName, id.ToString());
             return docLink;
+        }
+
+        public async Task<IDataStoreChanges<T>> GetChangedSinceToken<T>(IDataStoreReadChanges aggregateQueriedByToken) where T : class, IAggregate, new()
+        {
+            throw new NotImplementedException();
+            // TODO not tested in anyway, just filled in what i know so far
+            var checkpoints = JsonConvert.DeserializeObject<Dictionary<string, string>>(aggregateQueriedByToken.Token);
+
+            var (docs, newCheckpoints) = await GetChanges(documentClient, UriFactory.CreateDocumentCollectionUri(config.DatabaseName, config.CollectionSettings.CollectionName), checkpoints);
+
+            return new DataStoreChanges<T>(docs.Cast<T>(), JsonConvert.SerializeObject(newCheckpoints));
+        }
+
+        /// <summary>
+        /// Get changes within the collection since the last checkpoint. This sample shows how to process the change 
+        /// feed from a single worker. When working with large collections, this is typically split across multiple
+        /// workers each processing a single or set of partition key ranges.
+        /// </summary>
+        /// <param name="client">DocumentDB client instance</param>
+        /// <param name="checkpoints"></param>
+        /// <returns></returns>
+        private static async Task<(IEnumerable<Document>, Dictionary<string, string>)> GetChanges(
+            DocumentClient client,
+            Uri collectionUri,
+            Dictionary<string, string> checkpoints)
+        {
+            //int numChangesRead = 0;
+            string pkRangesResponseContinuation = null;
+            List<PartitionKeyRange> partitionKeyRanges = new List<PartitionKeyRange>();
+
+            do
+            {
+                FeedResponse<PartitionKeyRange> pkRangesResponse = await client.ReadPartitionKeyRangeFeedAsync(
+                    collectionUri,
+                    new FeedOptions { RequestContinuation = pkRangesResponseContinuation });
+
+                partitionKeyRanges.AddRange(pkRangesResponse);
+                pkRangesResponseContinuation = pkRangesResponse.ResponseContinuation;
+            }
+            while (pkRangesResponseContinuation != null);
+
+            // TODO populate
+            var docs = new List<Document>();
+
+            foreach (PartitionKeyRange pkRange in partitionKeyRanges)
+            {
+                string continuation = null;
+                checkpoints.TryGetValue(pkRange.Id, out continuation);
+
+                IDocumentQuery<Document> query = client.CreateDocumentChangeFeedQuery(
+                    collectionUri,
+                    new ChangeFeedOptions
+                    {
+                        PartitionKeyRangeId = pkRange.Id,
+                        StartFromBeginning = true,
+                        RequestContinuation = continuation,
+                        MaxItemCount = -1,
+                    });
+
+                while (query.HasMoreResults)
+                {
+                    // could change DeviceReading type to dynamic to see what it is, in another example from ms its actually
+                    // a Document
+                    FeedResponse<DeviceReading> readChangesResponse = await query.ExecuteNextAsync<DeviceReading>();
+
+                    foreach (DeviceReading changedDocument in readChangesResponse)
+                    {
+                        // hopefully can get the doc here
+                        //docs.Add()
+                        //Console.WriteLine("\tRead document {0} from the change feed.", changedDocument.);
+                        //numChangesRead++;
+                    }
+
+                    checkpoints[pkRange.Id] = readChangesResponse.ResponseContinuation;
+                }
+            }
+
+            //Console.WriteLine("Read {0} documents from the change feed", numChangesRead);
+
+            return (docs, checkpoints);
+        }
+
+        public class DeviceReading
+        {
+            [JsonProperty("id")]
+            public string Id { get; set; }
+
+            [JsonProperty("deviceId")]
+            public string DeviceId { get; set; }
+
+            [JsonConverter(typeof(IsoDateTimeConverter))]
+            [JsonProperty("readingTime")]
+            public DateTime ReadingTime { get; set; }
+
+            [JsonProperty("metricType")]
+            public string MetricType { get; set; }
+
+            [JsonProperty("unit")]
+            public string Unit { get; set; }
+
+            [JsonProperty("metricValue")]
+            public double MetricValue { get; set; }
         }
     }
 }

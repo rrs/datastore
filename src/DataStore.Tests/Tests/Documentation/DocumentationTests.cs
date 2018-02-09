@@ -12,7 +12,7 @@
         public async void CanUpdateCar()
         {
             var documentRepository = new InMemoryDocumentRepository();
-            var inMemoryDb = documentRepository.Aggregates;
+            var inMemoryDb = documentRepository.Db;
             var dataStore = new DataStore(documentRepository);
 
             var carId = Guid.NewGuid();
@@ -45,7 +45,7 @@
         public async void WhenUpdateCarButDontCommitChangesOnlyTheLocalCacheIsAffected()
         {
             var documentRepository = new InMemoryDocumentRepository();
-            var inMemoryDb = documentRepository.Aggregates;
+            var inMemoryDb = documentRepository.Db;
             var dataStore = new DataStore(documentRepository);
 
             var carId = Guid.NewGuid();
@@ -71,7 +71,7 @@
             Assert.Null(dataStore.ExecutedOperations.SingleOrDefault(e => e is UpdateOperation<Car>));
 
             //The underlying database has NOT changed
-            Assert.Equal("Toyota", inMemoryDb.OfType<Car>().Single(car => car.id == carId).Make);
+            Assert.Equal("Toyota", inMemoryDb.Aggregates.OfType<Car>().Single(car => car.id == carId).Make);
 
             //The DataStore instance picks up the change, because it has applied
             //all the previous changes made during this session to any query.

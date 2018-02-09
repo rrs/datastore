@@ -10,7 +10,7 @@
     {
         public static ITestHarness GetTestHarness(string testName)
         {
-            //return GetDocumentDbTestHarness(testName);
+            return GetDocumentDbTestHarness(testName);
             //return GetSqlServerTestHarness(testName);
             return GetInMemoryTestHarness();
         }
