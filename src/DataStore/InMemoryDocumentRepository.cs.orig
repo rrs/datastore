@@ -2,13 +2,19 @@
 {
     using global::DataStore.Interfaces;
     using global::DataStore.Interfaces.LowLevel;
-    using global::DataStore.Models;
     using global::DataStore.Models.PureFunctions.Extensions;
     using Rrs.TaskShim;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+<<<<<<< HEAD
+=======
+    using global::DataStore.Interfaces;
+    using global::DataStore.Interfaces.LowLevel;
+    using global::DataStore.Models;
+    using global::DataStore.Models.PureFunctions.Extensions;
+>>>>>>> feature/ChangeFeed
 
     public class InMemoryDocumentRepository : IDocumentRepository
     {
@@ -61,7 +67,13 @@
 
         public Task<bool> Exists(IDataStoreReadById aggregateQueriedById)
         {
-            return Tap.FromResult(Db.Aggregates.Any(a => a.id == aggregateQueriedById.Id));
+<<<<<<< HEAD
+            var result = Aggregates.Exists(a => a.id == aggregateQueriedById.Id);
+
+            return Tap.FromResult(result);
+=======
+            return Task.FromResult(Db.Aggregates.Any(a => a.id == aggregateQueriedById.Id));
+>>>>>>> feature/ChangeFeed
         }
 
         public Task<T> GetItemAsync<T>(IDataStoreReadById aggregateQueriedById) where T : class, IAggregate, new()
@@ -93,7 +105,7 @@
             var highestVersion = changedRows.Any() ? changedRows.Max(x => x.Version).ToString() : aggregateQueriedByToken.Token;
 
             IDataStoreChanges<T> changes = new DataStoreChanges<T>(changedRows.Select(x => x.Aggregate).Cast<T>(), highestVersion);
-            return Tap.FromResult(changes);
+            return  Task.FromResult(changes);
         }
 
         public class InMemoryDb : IDisposable

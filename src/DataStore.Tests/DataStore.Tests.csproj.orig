@@ -6,11 +6,16 @@
 
   <ItemGroup>
     <None Remove="DocumentDbSettings.json" />
+    <None Remove="SqlServerDbSettings.json" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.DocumentDB" Version="1.13.1" />
+<<<<<<< HEAD
+    <PackageReference Include="Microsoft.CSharp" Version="4.3.0" />
+=======
     <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
+>>>>>>> feature/ChangeFeed
     <PackageReference Include="System.ValueTuple" Version="4.4.0" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
@@ -26,12 +31,6 @@
 
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="SqlServerDbSettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

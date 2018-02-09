@@ -14,6 +14,11 @@
         Guid Id { get; set; }
     }
 
+    public interface IDataStoreReadChanges : IDataStoreReadOperation
+    {
+        string Token { get; set; }
+    }
+
     public interface IDataStoreReadOperation : IDataStoreOperation, IRequestState
     {
     }

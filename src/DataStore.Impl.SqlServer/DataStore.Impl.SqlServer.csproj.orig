@@ -11,11 +11,15 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Rrs.TaskShim" Version="1.0.15" />
-    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup>
+<<<<<<< HEAD
     <ProjectReference Include="..\DataStore.Interfaces\DataStore.Interfaces.csproj" />
     <ProjectReference Include="..\DataStore.Models\DataStore.Models.csproj" />
+=======
+    <PackageReference Include="Microsoft.CSharp" Version="4.4.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.3.0" />
+>>>>>>> feature/ChangeFeed
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Transactions" />

@@ -34,14 +34,14 @@
             //copied from datastore create capabilities, may get out of date
             DataStoreCreateCapabilities.ForceProperties(aggregate.ReadOnly, aggregate);
 
-            DocumentRepository.Aggregates.Add(aggregate);
+            DocumentRepository.Db.Add(aggregate);
         }
 
         public IEnumerable<T> QueryDatabase<T>(Func<IQueryable<T>, IQueryable<T>> extendQueryable = null) where T : class, IAggregate, new()
         {
             var queryResult = extendQueryable == null
-                                  ? DocumentRepository.Aggregates.OfType<T>()
-                                  : extendQueryable(DocumentRepository.Aggregates.OfType<T>().AsQueryable());
+                                  ? DocumentRepository.Db.Aggregates.OfType<T>()
+                                  : extendQueryable(DocumentRepository.Db.Aggregates.OfType<T>().AsQueryable());
             return queryResult;
         }
     }

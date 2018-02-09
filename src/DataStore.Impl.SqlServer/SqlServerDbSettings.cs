@@ -31,7 +31,7 @@
 
         public string ToConnectionString()
         {
-            return $"Server={ServerInstance};Database={Database};User Id={UserId};Password={Password}";
+            return $"Server={ServerInstance};Database={Database};User Id={UserId};Password={Password};Asynchronous Processing=True";
         }
     }
 }

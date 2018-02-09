@@ -51,6 +51,12 @@ namespace DataStore
                        .To(this.dataStoreConnection.GetItemAsync<T>);
         }
 
+        public Task<IDataStoreChanges<T>> ReadChanged<T>(string continuationToken) where T : class, IAggregate, new()
+        {
+            return this.messageAggregator.CollectAndForward(new AggregateChangesQueryOperation(nameof(ReadChanged), continuationToken))
+                       .To(this.dataStoreConnection.GetChangedSinceToken<T>);
+        }
+
         private Task<IEnumerable<T2>> ReadCommittedInternal<T, T2>(Func<IQueryable<T>, IQueryable<T2>> queryableExtension) where T : class, IAggregate, new()
         {
             var transformedQueryable = queryableExtension(this.dataStoreConnection.CreateDocumentQuery<T>());

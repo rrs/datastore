@@ -9,6 +9,7 @@
     using global::DataStore.Interfaces;
     using global::DataStore.Interfaces.LowLevel;
     using global::DataStore.MessageAggregator;
+    using Rrs.TaskShim;
 
     /// <summary>
     ///     Facade over querying and unit of work capabilities
@@ -39,7 +40,7 @@
         {
             var dataStoreEvents = this.messageAggregator.AllMessages.OfType<IQueuedDataStoreWriteOperation>();
 
-            return QueuedStateChangeHelper.Iterate(dataStoreEvents);
+            return Tap.IterateTasks(dataStoreEvents.Select(o => o.CommitClosure()));
         }
 
         public Task<T> Create(T model, bool readOnly = false)
