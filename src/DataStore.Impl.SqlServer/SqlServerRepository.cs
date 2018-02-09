@@ -1,14 +1,15 @@
 ﻿namespace DataStore.Impl.SqlServer
 {
+    using DataStore.Interfaces;
+    using DataStore.Interfaces.LowLevel;
+    using DataStore.Models.PureFunctions.Extensions;
+    using Newtonsoft.Json;
+    using Rrs.TaskShim;
     using System;
     using System.Collections.Generic;
     using System.Data.SqlClient;
     using System.Linq;
     using System.Threading.Tasks;
-    using DataStore.Interfaces;
-    using DataStore.Interfaces.LowLevel;
-    using DataStore.Models.PureFunctions.Extensions;
-    using Newtonsoft.Json;
 
     public class SqlServerRepository : IDocumentRepository
     {
@@ -110,7 +111,7 @@
         {
             var results = aggregatesQueried.Query.ToList();
 
-            return TaskShim.FromResult(results.AsEnumerable());
+            return Tap.FromResult(results.AsEnumerable());
         }
 
         public Task<bool> Exists(IDataStoreReadById aggregateQueriedById)
@@ -138,7 +139,7 @@
             //       retrieving large recordsets, therefore we use the sync implementation.
 
             var result = GetItem<T>(aggregateQueriedById);
-            return TaskShim.FromResult(result);
+            return Tap.FromResult(result);
         }
 
         public Task UpdateAsync<T>(IDataStoreWriteOperation<T> aggregateUpdated) where T : class, IAggregate, new()

@@ -12,7 +12,9 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BackwardsCompatibility\BackwardsCompatibility.csproj" />
+    <PackageReference Include="Rrs.TaskShim" Version="1.0.15" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\DataStore.Models\DataStore.Models.csproj" />
     <ProjectReference Include="..\DataStore.Interfaces\DataStore.Interfaces.csproj" />
   </ItemGroup>

@@ -32,72 +32,78 @@
 
         public Task<T> DeleteHardById<T>(Guid id) where T : class, IAggregate, new()
         {
-            return messageAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(DeleteHardById), id, typeof(T)))
-                                   .To(DsConnection.GetItemAsync<T>).ContinueWith(t => 
-                                   {
-                                       var result = t.Result;
-                                       if (result == null) return null;
+            return messageAggregator
+                .CollectAndForward(new AggregateQueriedByIdOperation(nameof(DeleteHardById), id, typeof(T)))
+                .To(DsConnection.GetItemAsync<T>)
+                .ContinueWith(t => 
+                {
+                    var result = t.Result;
+                    if (result == null) return null;
 
-                                       this.messageAggregator.Collect(new QueuedHardDeleteOperation<T>(nameof(DeleteHardById), result, DsConnection, this.messageAggregator));
+                    this.messageAggregator.Collect(new QueuedHardDeleteOperation<T>(nameof(DeleteHardById), result, DsConnection, this.messageAggregator));
 
-                                       //clone otherwise its to easy to change the referenced object before committing
-                                       return result.Clone();
-                                   });
+                    //clone otherwise its to easy to change the referenced object before committing
+                    return result.Clone();
+                });
         }
 
         public Task<IEnumerable<T>> DeleteHardWhere<T>(Expression<Func<T, bool>> predicate) where T : class, IAggregate, new()
         {
-            return messageAggregator.CollectAndForward(
-                                        new AggregatesQueriedOperation<T>(nameof(DeleteHardWhere), DsConnection.CreateDocumentQuery<T>().Where(predicate)))
-                                    .To(DsConnection.ExecuteQuery).ContinueWith(t => 
-                                    {
-                                        var objects = t.Result;
-                                        var dataObjects = objects as T[] ?? objects.ToArray();
+            return messageAggregator
+                .CollectAndForward(new AggregatesQueriedOperation<T>(nameof(DeleteHardWhere), DsConnection.CreateDocumentQuery<T>().Where(predicate)))
+                .To(DsConnection.ExecuteQuery)
+                .ContinueWith(t => 
+                {
+                    var objects = t.Result;
+                    var dataObjects = objects as T[] ?? objects.ToArray();
 
-                                        if (!dataObjects.Any()) return dataObjects;
+                    if (!dataObjects.Any()) return dataObjects;
 
-                                        foreach (var dataObject in dataObjects)
-                                            this.messageAggregator.Collect(new QueuedHardDeleteOperation<T>(nameof(DeleteHardWhere), dataObject, DsConnection, this.messageAggregator));
+                    foreach (var dataObject in dataObjects)
+                        this.messageAggregator.Collect(new QueuedHardDeleteOperation<T>(nameof(DeleteHardWhere), dataObject, DsConnection, this.messageAggregator));
 
-                                        //clone otherwise its to easy to change the referenced object before committing
-                                        return dataObjects.Select(d => d.Clone());
-                                    });
+                    //clone otherwise its to easy to change the referenced object before committing
+                    return dataObjects.Select(d => d.Clone());
+                });
         }
 
         public Task<T> DeleteSoftById<T>(Guid id) where T : class, IAggregate, new()
         {
-             return messageAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(DeleteSoftById), id, typeof(T)))
-                                   .To(DsConnection.GetItemAsync<T>).ContinueWith(t => 
-                                   {
-                                       var result = t.Result;
-                                       if (result == null) return null;
+             return messageAggregator
+                .CollectAndForward(new AggregateQueriedByIdOperation(nameof(DeleteSoftById), id, typeof(T)))
+                .To(DsConnection.GetItemAsync<T>)
+                .ContinueWith(t => 
+                {
+                    var result = t.Result;
+                    if (result == null) return null;
 
-                                       this.messageAggregator.Collect(new QueuedSoftDeleteOperation<T>(nameof(DeleteSoftById), result, DsConnection, this.messageAggregator));
+                    this.messageAggregator.Collect(new QueuedSoftDeleteOperation<T>(nameof(DeleteSoftById), result, DsConnection, this.messageAggregator));
 
-                                       //clone otherwise its to easy to change the referenced object before committing
-                                       return result.Clone();
+                    //clone otherwise its to easy to change the referenced object before committing
+                    return result.Clone();
 
-                                   });
+                });
         }
 
         // .. soft delete one or more DataObjects 
         public Task<IEnumerable<T>> DeleteSoftWhere<T>(Expression<Func<T, bool>> predicate) where T : class, IAggregate, new()
         {
-            return messageAggregator.CollectAndForward(
-                                        new AggregatesQueriedOperation<T>(nameof(DeleteSoftWhere), DsConnection.CreateDocumentQuery<T>().Where(predicate)))
-                                    .To(DsConnection.ExecuteQuery).ContinueWith(t => 
-                                    {
-                                        var objects = t.Result;
-                                        var dataObjects = objects as T[] ?? objects.ToArray();
+            return messageAggregator
+                .CollectAndForward(new AggregatesQueriedOperation<T>(nameof(DeleteSoftWhere), DsConnection.CreateDocumentQuery<T>().Where(predicate)))
+                .To(DsConnection.ExecuteQuery)
+                .ContinueWith(t => 
+                {
+                    var objects = t.Result;
+                    var dataObjects = objects as T[] ?? objects.ToArray();
 
-                                        if (!dataObjects.Any()) return dataObjects;
+                    if (!dataObjects.Any()) return dataObjects;
 
-                                        foreach (var dataObject in dataObjects)
-                                            this.messageAggregator.Collect(new QueuedSoftDeleteOperation<T>(nameof(DeleteSoftWhere), dataObject, DsConnection, this.messageAggregator));
+                    foreach (var dataObject in dataObjects)
+                        this.messageAggregator.Collect(new QueuedSoftDeleteOperation<T>(nameof(DeleteSoftWhere), dataObject, DsConnection, this.messageAggregator));
 
-                                        //clone otherwise its to easy to change the referenced object before committing
-                                        return dataObjects.Select(o => o.Clone());
-                                    });
+                    //clone otherwise its to easy to change the referenced object before committing
+                    return dataObjects.Select(o => o.Clone());
+                });
         }
     }
 }

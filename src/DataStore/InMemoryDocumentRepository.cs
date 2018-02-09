@@ -1,12 +1,13 @@
 ﻿namespace DataStore
 {
+    using global::DataStore.Interfaces;
+    using global::DataStore.Interfaces.LowLevel;
+    using global::DataStore.Models.PureFunctions.Extensions;
+    using Rrs.TaskShim;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using global::DataStore.Interfaces;
-    using global::DataStore.Interfaces.LowLevel;
-    using global::DataStore.Models.PureFunctions.Extensions;
 
     public class InMemoryDocumentRepository : IDocumentRepository
     {
@@ -16,7 +17,7 @@
         {
             Aggregates.Add(aggregateAdded.Model);
 
-            return TaskShim.CompletedTask;
+            return Tap.CompletedTask;
         }
 
         public IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
@@ -29,7 +30,7 @@
         {
             Aggregates.RemoveAll(a => a.id == aggregateHardDeleted.Model.id);
 
-            return TaskShim.CompletedTask;
+            return Tap.CompletedTask;
         }
 
         public Task DeleteSoftAsync<T>(IDataStoreWriteOperation<T> aggregateSoftDeleted) where T : class, IAggregate, new()
@@ -41,7 +42,7 @@
             aggregate.Modified = now;
             aggregate.ModifiedAsMillisecondsEpochTime = now.ConvertToMillisecondsEpochTime();
 
-            return TaskShim.CompletedTask;
+            return Tap.CompletedTask;
         }
 
         public void Dispose()
@@ -54,14 +55,14 @@
             //clone otherwise its to easy to change the referenced object in test code affecting results
             var result = aggregatesQueried.Query.ToList().CloneEnumerable();
 
-            return TaskShim.FromResult(result);
+            return Tap.FromResult(result);
         }
 
         public Task<bool> Exists(IDataStoreReadById aggregateQueriedById)
         {
             var result = Aggregates.Exists(a => a.id == aggregateQueriedById.Id);
 
-            return TaskShim.FromResult(result);
+            return Tap.FromResult(result);
         }
 
         public Task<T> GetItemAsync<T>(IDataStoreReadById aggregateQueriedById) where T : class, IAggregate, new()
@@ -71,7 +72,7 @@
             //clone otherwise its to easy to change the referenced object in test code affecting results
             var clone = aggregate?.Clone();
 
-            return TaskShim.FromResult(clone);
+            return Tap.FromResult(clone);
         }
 
         public Task UpdateAsync<T>(IDataStoreWriteOperation<T> aggregateUpdated) where T : class, IAggregate, new()
@@ -80,7 +81,7 @@
 
             aggregateUpdated.Model.CopyProperties(toUpdate);
 
-            return TaskShim.CompletedTask;
+            return Tap.CompletedTask;
         }
     }
 }

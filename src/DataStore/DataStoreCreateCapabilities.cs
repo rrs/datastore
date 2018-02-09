@@ -4,15 +4,16 @@
 
 namespace DataStore
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
     using CircuitBoard.MessageAggregator;
     using global::DataStore.Interfaces;
     using global::DataStore.Interfaces.LowLevel;
     using global::DataStore.Models.Messages;
     using global::DataStore.Models.PureFunctions.Extensions;
+    using Rrs.TaskShim;
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     //methods return the enriched object as it was added to the database
 
@@ -42,7 +43,7 @@ namespace DataStore
             //essentially no external client should be able to get a reference to the instance we use internally
             var clone = newObject.Clone();
 
-            return TaskShim.FromResult(clone);
+            return Tap.FromResult(clone);
         }
 
         internal static void ForceProperties<T>(bool readOnly, T enriched) where T : class, IAggregate, new()

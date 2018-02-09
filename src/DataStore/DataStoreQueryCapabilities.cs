@@ -1,14 +1,15 @@
 ﻿namespace DataStore
 {
+    using CircuitBoard.MessageAggregator;
+    using global::DataStore.Interfaces;
+    using global::DataStore.Interfaces.LowLevel;
+    using global::DataStore.Models.Messages;
+    using Rrs.TaskShim;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Linq.Expressions;
     using System.Threading.Tasks;
-    using CircuitBoard.MessageAggregator;
-    using global::DataStore.Interfaces;
-    using global::DataStore.Interfaces.LowLevel;
-    using global::DataStore.Models.Messages;
 
     //methods return the latest version of an object including uncommitted session changes
 
@@ -29,9 +30,9 @@
 
         public Task<bool> Exists(Guid id)
         {
-            if (id == Guid.Empty) return TaskShim.FromResult(false);
+            if (id == Guid.Empty) return Tap.FromResult(false);
 
-            if (HasBeenHardDeletedInThisSession(id)) return TaskShim.FromResult(false);
+            if (HasBeenHardDeletedInThisSession(id)) return Tap.FromResult(false);
 
             return this.messageAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(Exists), id)).To(DbConnection.Exists);
         }
@@ -69,24 +70,24 @@
         {
             if (modelId == Guid.Empty) return null;
 
-            var result = this.messageAggregator.CollectAndForward(new AggregateQueriedByIdOperation(nameof(ReadActiveById), modelId))
-                                   .To(DbConnection.GetItemAsync<T>).ContinueWith(t => 
-                                   {
-                                       if (t.Result == null || !t.Result.Active)
-                                       {
-                                           var replayResult = this.eventReplay.ApplyAggregateEvents(new List<T>(), true).SingleOrDefault();
-                                           return replayResult;
-                                       }
+            return messageAggregator
+                .CollectAndForward(new AggregateQueriedByIdOperation(nameof(ReadActiveById), modelId))
+                .To(DbConnection.GetItemAsync<T>)
+                .ContinueWith(t => 
+                {
+                    if (t.Result == null || !t.Result.Active)
+                    {
+                        var replayResult = this.eventReplay.ApplyAggregateEvents(new List<T>(), true).SingleOrDefault();
+                        return replayResult;
+                    }
 
-                                       return this.eventReplay.ApplyAggregateEvents(
-                                        new List<T>
-                                        {
-                                            t.Result
-                                        },
-                                        true).SingleOrDefault();
-                                   });
-            return result;
-            
+                    return this.eventReplay.ApplyAggregateEvents(
+                    new List<T>
+                    {
+                        t.Result
+                    },
+                    true).SingleOrDefault();
+                });
         }
 
         private bool HasBeenHardDeletedInThisSession(Guid id)
