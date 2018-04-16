@@ -2,19 +2,13 @@
 {
     using global::DataStore.Interfaces;
     using global::DataStore.Interfaces.LowLevel;
+    using global::DataStore.Models;
     using global::DataStore.Models.PureFunctions.Extensions;
     using Rrs.TaskShim;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-<<<<<<< HEAD
-=======
-    using global::DataStore.Interfaces;
-    using global::DataStore.Interfaces.LowLevel;
-    using global::DataStore.Models;
-    using global::DataStore.Models.PureFunctions.Extensions;
->>>>>>> feature/ChangeFeed
 
     public class InMemoryDocumentRepository : IDocumentRepository
     {
@@ -30,7 +24,11 @@
         public IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
         {
             //clone otherwise its to easy to change the referenced object in test code affecting results
+<<<<<<< HEAD
             return Db.Aggregates.Where(x => x.schema == typeof(T).FullName).Cast<T>().CloneEnumerable().AsQueryable();
+=======
+            return Aggregates.Where(x => x.schema == typeof(T).FullName).Cast<T>().Clone().AsQueryable();
+>>>>>>> master
         }
 
         public Task DeleteHardAsync<T>(IDataStoreWriteOperation<T> aggregateHardDeleted) where T : class, IAggregate, new()
@@ -60,20 +58,14 @@
         public Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried)
         {
             //clone otherwise its to easy to change the referenced object in test code affecting results
-            var result = aggregatesQueried.Query.ToList().CloneEnumerable();
+            var result = aggregatesQueried.Query.ToList().Clone().AsEnumerable();
 
             return Tap.FromResult(result);
         }
 
         public Task<bool> Exists(IDataStoreReadById aggregateQueriedById)
         {
-<<<<<<< HEAD
-            var result = Aggregates.Exists(a => a.id == aggregateQueriedById.Id);
-
-            return Tap.FromResult(result);
-=======
-            return Task.FromResult(Db.Aggregates.Any(a => a.id == aggregateQueriedById.Id));
->>>>>>> feature/ChangeFeed
+            return Tap.FromResult(Db.Aggregates.Any(a => a.id == aggregateQueriedById.Id));
         }
 
         public Task<T> GetItemAsync<T>(IDataStoreReadById aggregateQueriedById) where T : class, IAggregate, new()
@@ -105,7 +97,7 @@
             var highestVersion = changedRows.Any() ? changedRows.Max(x => x.Version).ToString() : aggregateQueriedByToken.Token;
 
             IDataStoreChanges<T> changes = new DataStoreChanges<T>(changedRows.Select(x => x.Aggregate).Cast<T>(), highestVersion);
-            return  Task.FromResult(changes);
+            return Tap.FromResult(changes);
         }
 
         public class InMemoryDb : IDisposable
