@@ -24,7 +24,7 @@
         public IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
         {
             //clone otherwise its to easy to change the referenced object in test code affecting results
-            return Db.Aggregates.Where(x => x.schema == typeof(T).FullName).Cast<T>().CloneEnumerable().AsQueryable();
+            return Db.Aggregates.Where(x => x.schema == typeof(T).FullName).Cast<T>().Clone().AsQueryable();
         }
 
         public Task DeleteHardAsync<T>(IDataStoreWriteOperation<T> aggregateHardDeleted) where T : class, IAggregate, new()
@@ -54,7 +54,7 @@
         public Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried)
         {
             //clone otherwise its to easy to change the referenced object in test code affecting results
-            var result = aggregatesQueried.Query.ToList().CloneEnumerable();
+            var result = aggregatesQueried.Query.ToList().Clone().AsEnumerable();
 
             return Tap.FromResult(result);
         }

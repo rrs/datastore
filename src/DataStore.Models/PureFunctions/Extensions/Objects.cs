@@ -1,19 +1,26 @@
 ﻿namespace DataStore.Models.PureFunctions.Extensions
 {
     using System;
-    using System.Collections.Generic;
-    using System.Dynamic;
     using System.Linq;
     using System.Linq.Expressions;
     using System.Reflection;
     using System.Runtime.CompilerServices;
     using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
     using Newtonsoft.Json.Linq;
     using Newtonsoft.Json.Serialization;
 
     public static class Objects
     {
+        private static readonly JsonSerializerSettings DeSerialisationSettings = new JsonSerializerSettings
+        {
+            TypeNameHandling = TypeNameHandling.Auto //for things with $type use that type when deserializing
+        };
+
+        private static readonly JsonSerializerSettings SerialisationSettings = new JsonSerializerSettings
+        {
+            TypeNameHandling = TypeNameHandling.Objects //apply $type to only objects not collections
+        };
+
         private static readonly char[] SystemTypeChars =
         {
             '<',
@@ -44,6 +51,7 @@
                         ContractResolver = new CamelCasePropertyNamesContractResolver()
                     });
             }
+
             return json;
         }
 
@@ -57,30 +65,14 @@
             return (T)o;
         }
 
-        public static T Clone<T>(this T source) where T : class, new()
+        public static T Clone<T>(this T source)
         {
-            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source));
+            return source.ToJsonString().FromJsonString<T>();
         }
 
-        public static T Clone<T>(this object source) where T : class, new()
+        public static T Clone<T>(this object source)
         {
-            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source));
-        }
-
-        public static IEnumerable<T> CloneEnumerable<T>(this IEnumerable<T> toClone)
-        {
-            var asJson = JsonConvert.SerializeObject(toClone);
-            var cloned = JsonConvert.DeserializeObject<IEnumerable<T>>(asJson);
-            return cloned;
-        }
-
-        public static ExpandoObject ConvertStrongTypeToExpando(this object obj)
-        {
-            var serializedObject = JsonConvert.SerializeObject(obj);
-
-            var asExpando = JsonConvert.DeserializeObject<ExpandoObject>(serializedObject, new ExpandoObjectConverter());
-
-            return asExpando;
+            return source.ToJsonString().FromJsonString<T>();
         }
 
         /// <summary>
@@ -112,6 +104,11 @@
 
             // map the properties
             foreach (var props in results) props.targetProperty.SetValue(destination, props.sourceProperty.GetValue(source, null), null);
+        }
+
+        public static T FromJsonString<T>(this string source)
+        {
+            return source == null ? default(T) : JsonConvert.DeserializeObject<T>(source, DeSerialisationSettings);
         }
 
         /// <summary>
@@ -221,6 +218,11 @@
             genericTypeName = genericTypeName.Substring(0, genericTypeName.IndexOf('`'));
             var genericArgs = string.Join(",", t.GetGenericArguments().Select(ta => ToGenericTypeString(ta)).ToArray());
             return genericTypeName + "<" + genericArgs + ">";
+        }
+
+        public static string ToJsonString(this object source, Formatting formatting = Formatting.None)
+        {
+            return source == null ? null : JsonConvert.SerializeObject(source, formatting, SerialisationSettings);
         }
 
         private static string GetPropertyNameCore(Expression propertyRefExpr)

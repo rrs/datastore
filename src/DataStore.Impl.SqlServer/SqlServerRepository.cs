@@ -15,6 +15,7 @@
 
     public class SqlServerRepository : IDocumentRepository
     {
+        
         private readonly SqlServerDbClientFactory clientFactory;
 
         private readonly SqlServerDbSettings settings;
@@ -189,7 +190,7 @@
                 {
                     var response = command.ExecuteScalar() as string;
 
-                    result = response == null ? null : JsonConvert.DeserializeObject<T>(response);
+                    result = response.FromJsonString<T>();
                 }
             }
             return result;
