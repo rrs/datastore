@@ -14,6 +14,7 @@
 
     public class SqlServerRepository : IDocumentRepository
     {
+        
         private readonly SqlServerDbClientFactory clientFactory;
 
         private readonly SqlServerDbSettings settings;
@@ -37,7 +38,8 @@
 
                     command.Parameters.Add(new SqlParameter("Schema", aggregateAdded.Model.schema));
 
-                    var json = JsonConvert.SerializeObject(aggregateAdded.Model);
+                    var json = aggregateAdded.Model.ToJsonString();
+
                     command.Parameters.Add(new SqlParameter("Json", json));
 
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -60,7 +62,9 @@
                         {
                             var json = reader.GetString(0);
 
-                            query.Add(JsonConvert.DeserializeObject<T>(json));
+                            var obj = json.FromJsonString<T>();
+
+                            query.Add(obj);
                         }
                     }
                 }
@@ -95,7 +99,9 @@
                     aggregateSoftDeleted.Model.Modified = now;
                     aggregateSoftDeleted.Model.ModifiedAsMillisecondsEpochTime = now.ConvertToMillisecondsEpochTime();
                     aggregateSoftDeleted.Model.Active = false;
-                    var json = JsonConvert.SerializeObject(aggregateSoftDeleted.Model);
+
+                    var json = aggregateSoftDeleted.Model.ToJsonString();
+
                     command.Parameters.Add(new SqlParameter("Json", json));
 
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -152,7 +158,8 @@
                 {
                     command.Parameters.Add(new SqlParameter("AggregateId", aggregateUpdated.Model.id));
 
-                    var json = JsonConvert.SerializeObject(aggregateUpdated.Model);
+                    var json = aggregateUpdated.Model.ToJsonString();
+
                     command.Parameters.Add(new SqlParameter("Json", json));
 
                     await command.ExecuteNonQueryAsync().ConfigureAwait(false);
@@ -205,7 +212,7 @@
                 {
                     var response = command.ExecuteScalar() as string;
 
-                    result = response == null ? null : JsonConvert.DeserializeObject<T>(response);
+                    result = response.FromJsonString<T>();
                 }
             }
             return result;
