@@ -8,9 +8,9 @@
     <PackageId>DataStore.Interfaces</PackageId>
     <PackageTags>DocumentDb;Azure;Data Access;Transactions;Profiling;LINQ</PackageTags>
     <PackageProjectUrl>https://github.com/anavarro9731/datastore</PackageProjectUrl>
-    <Version>3.17.0</Version>
+    <Version>5.18.0</Version>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <AssemblyVersion>3.17.0.0</AssemblyVersion>
+    <AssemblyVersion>5.18.0.0</AssemblyVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CircuitBoard" Version="1.0.1" />

@@ -7,8 +7,8 @@
     <TargetFramework>net40</TargetFramework>
     <PackageProjectUrl>https://github.com/anavarro9731/datastore</PackageProjectUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Version>3.17.0</Version>
-    <AssemblyVersion>3.17.0.0</AssemblyVersion>
+    <Version>5.18.0</Version>
+    <AssemblyVersion>5.18.0.0</AssemblyVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Rrs.TaskShim" Version="1.0.19" />
