@@ -15,7 +15,6 @@
 
     public class SqlServerRepository : IDocumentRepository
     {
-        
         private readonly SqlServerDbClientFactory clientFactory;
 
         private readonly SqlServerDbSettings settings;
