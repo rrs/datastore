@@ -14,7 +14,7 @@
     using DataStore.Models.PureFunctions.Extensions;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
-    using Microsoft.Azure.Documents.Linq;
+    using Microsoft.Azure.Documents.Linq; 
 
     public class DocumentDbRepository : IDocumentRepository
     {
