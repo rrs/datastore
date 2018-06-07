@@ -49,7 +49,11 @@ namespace DataStore
             //clone otherwise its to easy to change the referenced object in test code affecting results
             var aggregates = Aggregates.Where(x => x.schema == typeof(T).FullName).Cast<T>().Clone();
 
-            var result = aggregates.AsQueryable().Where(aggregatesQueried.Query).AsEnumerable();
+            var queryable = aggregates.AsQueryable();
+
+            queryable = aggregatesQueried.Query == null ? queryable : queryable.Where(aggregatesQueried.Query);
+
+            var result = queryable.AsEnumerable();
 
             return Task.FromResult(result);
         }
@@ -60,7 +64,21 @@ namespace DataStore
             //clone otherwise its to easy to change the referenced object in test code affecting results
             var aggregates = Aggregates.Where(x => x.schema == typeof(TQuery).FullName).Cast<TQuery>().Clone();
 
-            var result = aggregates.AsQueryable().Where(aggregatesQueried.Query).Select(aggregatesQueried.Select).AsEnumerable();
+            var result = aggregates.AsQueryable().Select(aggregatesQueried.Select).AsEnumerable();
+
+            return Task.FromResult(result);
+        }
+
+        public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformFromQueryable<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
+        {
+            //clone otherwise its to easy to change the referenced object in test code affecting results
+            var aggregates = Aggregates.Where(x => x.schema == typeof(TQuery).FullName).Cast<TQuery>().Clone();
+
+            var queryable = aggregates.AsQueryable();
+
+            queryable = aggregatesQueried.Query == null ? queryable : queryable.Where(aggregatesQueried.Query);
+
+            var result = queryable.Select(aggregatesQueried.Select).AsEnumerable();
 
             return Task.FromResult(result);
         }

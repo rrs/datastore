@@ -89,12 +89,21 @@
          
         public Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried) where T : class, IAggregate, new()
         {
-            var results = CreateDocumentQuery<T>().AsQueryable().Where(aggregatesQueried.Query);
+            var queryable = CreateDocumentQuery<T>().AsQueryable();
+
+            var results = aggregatesQueried.Query == null ? queryable : queryable.Where(aggregatesQueried.Query);
 
             return Task.FromResult(results.AsEnumerable());
         }
 
         public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
+        {
+            var results = CreateDocumentQuery<TQuery>().AsQueryable().Select(aggregatesQueried.Select);
+
+            return Task.FromResult(results.AsEnumerable());
+        }
+
+        public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformFromQueryable<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
         {
             var results = CreateDocumentQuery<TQuery>().AsQueryable().Where(aggregatesQueried.Query).Select(aggregatesQueried.Select);
 
@@ -188,5 +197,6 @@
             }
             return result;
         }
+
     }
 }

@@ -17,6 +17,10 @@
 
         Task<IEnumerable<TResult>> ReadCommitted<TQuery, TResult>(Expression<Func<TQuery, bool>> query, Expression<Func<TQuery, TResult>> select) where TQuery : class, IAggregate, new();
 
+        Task<IEnumerable<TResult>> ReadActiveCommitted<TQuery, TResult>(Expression<Func<TQuery, TResult>> select) where TQuery : class, IAggregate, new();
+
+        Task<IEnumerable<TResult>> ReadCommitted<TQuery, TResult>(Expression<Func<TQuery, TResult>> select) where TQuery : class, IAggregate, new();
+
         Task<T> ReadCommittedById<T>(Guid modelId) where T : class, IAggregate, new();
     }
 }

@@ -40,7 +40,9 @@
 
         public IEnumerable<T> QueryDatabase<T>(Expression<Func<T, bool>> query = null) where T : class, IAggregate, new()
         {
-            var queryResult = DocumentRepository.Aggregates.OfType<T>().AsQueryable().Where(query);
+            var queryResult = DocumentRepository.Aggregates.OfType<T>().AsQueryable();
+
+            queryResult = query == null ? queryResult : queryResult.Where(query);
             return queryResult;
         }
     }
