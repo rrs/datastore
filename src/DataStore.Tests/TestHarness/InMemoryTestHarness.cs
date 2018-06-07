@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Linq.Expressions;
     using CircuitBoard.MessageAggregator;
     using CircuitBoard.Messages;
     using global::DataStore.Interfaces.LowLevel;
@@ -37,11 +38,9 @@
             DocumentRepository.Aggregates.Add(aggregate);
         }
 
-        public IEnumerable<T> QueryDatabase<T>(Func<IQueryable<T>, IQueryable<T>> extendQueryable = null) where T : class, IAggregate, new()
+        public IEnumerable<T> QueryDatabase<T>(Expression<Func<T, bool>> query = null) where T : class, IAggregate, new()
         {
-            var queryResult = extendQueryable == null
-                                  ? DocumentRepository.Aggregates.OfType<T>()
-                                  : extendQueryable(DocumentRepository.Aggregates.OfType<T>().AsQueryable());
+            var queryResult = DocumentRepository.Aggregates.OfType<T>().AsQueryable().Where(query);
             return queryResult;
         }
     }

@@ -9,6 +9,7 @@
     using global::DataStore.Interfaces;
     using global::DataStore.Interfaces.LowLevel;
     using global::DataStore.Models.Messages;
+    using global::DataStore.Models.PureFunctions;
 
     //methods return the latest version of an object including uncommitted session changes
 
@@ -40,11 +41,7 @@
         // get a filtered list of the models from set of DataObjects
         public async Task<IEnumerable<T>> Read<T>(Expression<Func<T, bool>> predicate = null) where T : class, IAggregate, new()
         {
-            var queryable = DbConnection.CreateDocumentQuery<T>();
-
-            if (predicate != null) queryable = queryable.Where(predicate);
-
-            var results = await this.messageAggregator.CollectAndForward(new AggregatesQueriedOperation<T>(nameof(ReadActiveById), queryable))
+            var results = await this.messageAggregator.CollectAndForward(new AggregatesQueriedOperation<T>(nameof(ReadActiveById), predicate))
                                     .To(DbConnection.ExecuteQuery).ConfigureAwait(false);
 
             return this.eventReplay.ApplyAggregateEvents(results, false);
@@ -53,9 +50,9 @@
         // get a filtered list of the models from a set of active DataObjects
         public async Task<IEnumerable<T>> ReadActive<T>(Expression<Func<T, bool>> predicate = null) where T : class, IAggregate, new()
         {
-            var queryable = DbConnection.CreateDocumentQuery<T>().Where(a => a.Active);
+            Expression<Func<T, bool>> queryable = a => a.Active;
 
-            if (predicate != null) queryable = queryable.Where(predicate);
+            if (predicate != null) queryable = queryable.And(predicate);
 
             var results = await this.messageAggregator.CollectAndForward(new AggregatesQueriedOperation<T>(nameof(ReadActiveById), queryable))
                                     .To(DbConnection.ExecuteQuery).ConfigureAwait(false);

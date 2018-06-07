@@ -47,7 +47,7 @@
         {
             var objects = await this.messageAggregator
                                     .CollectAndForward(
-                                        new AggregatesQueriedOperation<T>(nameof(DeleteHardWhere), DsConnection.CreateDocumentQuery<T>().Where(predicate)))
+                                        new AggregatesQueriedOperation<T>(nameof(DeleteHardWhere), predicate))
                                     .To(DsConnection.ExecuteQuery).ConfigureAwait(false);
 
             var dataObjects = objects as T[] ?? objects.ToArray();
@@ -79,7 +79,7 @@
         {
             var objects = await this.messageAggregator
                                     .CollectAndForward(
-                                        new AggregatesQueriedOperation<T>(nameof(DeleteSoftWhere), DsConnection.CreateDocumentQuery<T>().Where(predicate)))
+                                        new AggregatesQueriedOperation<T>(nameof(DeleteSoftWhere), predicate))
                                     .To(DsConnection.ExecuteQuery).ConfigureAwait(false);
 
             var dataObjects = objects as T[] ?? objects.ToArray();

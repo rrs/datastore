@@ -31,13 +31,13 @@ namespace DataStore.Tests.Tests.IDocumentRepositoryAgnostic.Query.SessionStateTe
             this.testHarness.DataStore.DeleteHardById<Car>(carId).Wait();
 
             // When
-            this.carFromDatabase = this.testHarness.DataStore.Advanced.ReadCommitted((IQueryable<Car> cars) => cars.Where(car => car.id == carId)).Result.Single();
+            this.carFromDatabase = this.testHarness.DataStore.Advanced.ReadCommitted<Car>(car => car.id == carId).Result.Single();
         }
 
         [Fact]
         public void ItShouldReturnThatItem()
         {
-            Assert.NotNull(this.testHarness.DataStore.ExecutedOperations.SingleOrDefault(e => e is TransformationQueriedOperation<Car>));
+            Assert.NotNull(this.testHarness.DataStore.ExecutedOperations.SingleOrDefault(e => e is ReadQueriedOperation<Car>));
             Assert.NotNull(this.carFromDatabase);
         }
     }

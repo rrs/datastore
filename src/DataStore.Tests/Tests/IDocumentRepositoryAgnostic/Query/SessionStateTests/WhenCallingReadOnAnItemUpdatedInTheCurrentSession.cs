@@ -39,7 +39,7 @@ namespace DataStore.Tests.Tests.IDocumentRepositoryAgnostic.Query.SessionStateTe
         public void ItShouldReturnTheItemWithTheUpdatesApplied()
         {
             Assert.NotNull(this.testHarness.DataStore.ExecutedOperations.SingleOrDefault(e => e is AggregatesQueriedOperation<Car>));
-            Assert.Equal("Volvo", this.testHarness.QueryDatabase<Car>(cars => cars.Where(car => car.id == this.carId)).Single().Make);
+            Assert.Equal("Volvo", this.testHarness.QueryDatabase<Car>(car => car.id == this.carId).Single().Make);
             Assert.Equal("Ford", this.carFromSession.Make);
         }
     }

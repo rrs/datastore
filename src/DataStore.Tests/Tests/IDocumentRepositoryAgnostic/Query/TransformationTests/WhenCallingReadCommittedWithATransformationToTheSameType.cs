@@ -28,13 +28,13 @@ namespace DataStore.Tests.Tests.IDocumentRepositoryAgnostic.Query.Transformation
             this.testHarness.AddToDatabase(existingCar);
 
             // When
-            this.carFromDatabase = this.testHarness.DataStore.Advanced.ReadCommitted((IQueryable<Car> cars) => cars.Where(car => car.id == carId)).Result.Single();
+            this.carFromDatabase = this.testHarness.DataStore.Advanced.ReadCommitted<Car>(car => car.id == carId).Result.Single();
         }
 
         [Fact]
         public void YouCanReturnResultsOfTheSameTypeAsTheOneYouQueried()
         {
-            Assert.NotNull(this.testHarness.DataStore.ExecutedOperations.SingleOrDefault(e => e is TransformationQueriedOperation<Car>));
+            Assert.NotNull(this.testHarness.DataStore.ExecutedOperations.SingleOrDefault(e => e is ReadQueriedOperation<Car>));
             Assert.Equal(typeof(Car), this.carFromDatabase.GetType());
         }
     }

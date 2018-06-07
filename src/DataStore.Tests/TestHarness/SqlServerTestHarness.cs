@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Linq.Expressions;
     using CircuitBoard.MessageAggregator;
     using CircuitBoard.Messages;
     using global::DataStore.Impl.SqlServer;
@@ -40,12 +41,9 @@
             newAggregate.CommitClosure().Wait();
         }
 
-        public IEnumerable<T> QueryDatabase<T>(Func<IQueryable<T>, IQueryable<T>> extendQueryable = null) where T : class, IAggregate, new()
+        public IEnumerable<T> QueryDatabase<T>(Expression<Func<T, bool>> query = null) where T : class, IAggregate, new()
         {
-            var query = extendQueryable == null
-                            ? this.sqlServerRepository.CreateDocumentQuery<T>()
-                            : extendQueryable(this.sqlServerRepository.CreateDocumentQuery<T>());
-            return this.sqlServerRepository.ExecuteQuery(new AggregatesQueriedOperation<T>(nameof(QueryDatabase), query.AsQueryable())).Result;
+            return this.sqlServerRepository.ExecuteQuery(new AggregatesQueriedOperation<T>(nameof(QueryDatabase), query)).Result;
         }
 
         private static void ClearTestDatabase(SqlServerDbSettings settings)

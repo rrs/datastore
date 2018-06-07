@@ -2,11 +2,12 @@
 {
     using System;
     using System.Linq;
+    using System.Linq.Expressions;
     using DataStore.Interfaces;
 
     public class AggregatesQueriedOperation<T> : IDataStoreReadFromQueryable<T>
     {
-        public AggregatesQueriedOperation(string methodCalled, IQueryable<T> query)
+        public AggregatesQueriedOperation(string methodCalled, Expression<Func<T, bool>> query)
         {
             MethodCalled = methodCalled;
             TypeName = typeof(T).FullName;
@@ -18,7 +19,7 @@
 
         public string MethodCalled { get; set; }
 
-        public IQueryable<T> Query { get; set; }
+        public Expression<Func<T, bool>> Query { get; set; }
 
         public double StateOperationCost { get; set; }
 

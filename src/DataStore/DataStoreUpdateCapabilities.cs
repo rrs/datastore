@@ -61,7 +61,7 @@
         {
             var objectsToUpdate =
                 await this.eventAggregator.CollectAndForward(
-                              new AggregatesQueriedOperation<T>(nameof(UpdateWhere), DsConnection.CreateDocumentQuery<T>().Where(predicate)))
+                              new AggregatesQueriedOperation<T>(nameof(UpdateWhere), predicate))
                           .To(DsConnection.ExecuteQuery).ConfigureAwait(false);
 
             var dataObjects = this.eventReplay.ApplyAggregateEvents(objectsToUpdate, false).AsEnumerable();

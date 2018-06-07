@@ -44,7 +44,7 @@ namespace DataStore.Tests.Tests.AzureOnly
         public void ItShouldPutThemAllInTheSamePartition()
         {
             //this line should not throw a cross-partition error because they are all in the same partition
-            Assert.Equal(5, this.testHarness.QueryDatabase<Car>(query => query.Where(x => x.Active)).Count());
+            Assert.Equal(5, this.testHarness.QueryDatabase<Car>(x => x.Active).Count());
         }
     }
 }

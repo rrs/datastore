@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Linq.Expressions;
     using CircuitBoard.MessageAggregator;
     using CircuitBoard.Messages;
     using global::DataStore.Impl.DocumentDb;
@@ -45,12 +46,9 @@
             newAggregate.CommitClosure().Wait();
         }
 
-        public IEnumerable<T> QueryDatabase<T>(Func<IQueryable<T>, IQueryable<T>> extendQueryable = null) where T : class, IAggregate, new()
+        public IEnumerable<T> QueryDatabase<T>(Expression<Func<T, bool>> query = null) where T : class, IAggregate, new()
         {
-            var query = extendQueryable == null
-                            ? this.documentDbRepository.CreateDocumentQuery<T>()
-                            : extendQueryable(this.documentDbRepository.CreateDocumentQuery<T>());
-            return this.documentDbRepository.ExecuteQuery(new AggregatesQueriedOperation<T>(nameof(QueryDatabase), query.AsQueryable())).Result;
+           return this.documentDbRepository.ExecuteQuery(new AggregatesQueriedOperation<T>(nameof(QueryDatabase), query)).Result;
         }
 
         public async void RemoveAllCollections()

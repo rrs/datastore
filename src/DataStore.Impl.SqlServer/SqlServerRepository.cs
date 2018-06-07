@@ -45,31 +45,6 @@
             }
         }
 
-        public IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
-        {
-            var schema = typeof(T).FullName;
-
-            var query = new List<T>();
-            using (var connection = this.clientFactory.OpenClient())
-            {
-                using (var command = new SqlCommand($"SELECT Json FROM {this.settings.TableName} WHERE [Schema] = '{schema}'", connection))
-                {
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            var json = reader.GetString(0);
-
-                            var obj = json.FromJsonString<T>();
-
-                            query.Add(obj);
-                        }
-                    }
-                }
-            }
-            return query.AsQueryable();
-        }
-
         public async Task DeleteHardAsync<T>(IDataStoreWriteOperation<T> aggregateHardDeleted) where T : class, IAggregate, new()
         {
             using (var con = this.clientFactory.OpenClient())
@@ -111,12 +86,44 @@
         {
             //nothing to dispose
         }
-
-        public Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried)
+         
+        public Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried) where T : class, IAggregate, new()
         {
-            var results = aggregatesQueried.Query.ToList();
+            var results = CreateDocumentQuery<T>().AsQueryable().Where(aggregatesQueried.Query);
 
             return Task.FromResult(results.AsEnumerable());
+        }
+
+        public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
+        {
+            var results = CreateDocumentQuery<TQuery>().AsQueryable().Where(aggregatesQueried.Query).Select(aggregatesQueried.Select);
+
+            return Task.FromResult(results.AsEnumerable());
+        }
+
+        private IEnumerable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
+        {
+            var schema = typeof(T).FullName;
+
+            var query = new List<T>();
+            using (var connection = this.clientFactory.OpenClient())
+            {
+                using (var command = new SqlCommand($"SELECT Json FROM {this.settings.TableName} WHERE [Schema] = '{schema}'", connection))
+                {
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var json = reader.GetString(0);
+
+                            var obj = json.FromJsonString<T>();
+
+                            query.Add(obj);
+                        }
+                    }
+                }
+            }
+            return query;
         }
 
         public async Task<bool> Exists(IDataStoreReadById aggregateQueriedById)

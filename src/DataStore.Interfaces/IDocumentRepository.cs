@@ -10,13 +10,15 @@ namespace DataStore.Interfaces
     {
         Task AddAsync<T>(IDataStoreWriteOperation<T> aggregateAdded) where T : class, IAggregate, new();
 
-        IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new();
+        //IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new();
 
         Task DeleteHardAsync<T>(IDataStoreWriteOperation<T> aggregateHardDeleted) where T : class, IAggregate, new();
 
         Task DeleteSoftAsync<T>(IDataStoreWriteOperation<T> aggregateSoftDeleted) where T : class, IAggregate, new();
 
-        Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried);
+        Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried) where T : class, IAggregate, new();
+
+        Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new();
 
         Task<bool> Exists(IDataStoreReadById aggregateQueriedById);
 

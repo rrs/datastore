@@ -30,13 +30,11 @@ namespace DataStore.Tests.Tests.IDocumentRepositoryAgnostic.Query.Transformation
             testHarness.DataStore.DeleteHardById<Car>(this.carId).Wait();
 
             // When
-            testHarness.DataStore.Advanced.ReadCommitted(
-                (IQueryable<Car> cars) => cars.Where(car => car.id == this.carId).Select(
-                    c => new
-                    {
-                        c.id,
-                        c.Make
-                    })).Result.Single().Op(
+            testHarness.DataStore.Advanced.ReadCommitted((Car car) => car.id == this.carId, c => new
+            {
+                c.id,
+                c.Make
+            }).Result.Single().Op(
                 result =>
                     {
                     this.transformedType.Id = result.id;

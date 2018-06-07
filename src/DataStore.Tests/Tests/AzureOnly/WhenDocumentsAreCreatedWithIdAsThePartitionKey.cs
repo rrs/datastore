@@ -43,7 +43,7 @@ namespace DataStore.Tests.Tests.AzureOnly
         public void ItShouldPutThemAllInSeparatePartitions()
             //up to the max no. of partitions (e.g. 25)
         {
-            Assert.Equal(3, this.testHarness.QueryDatabase<Car>(query => query.Where(x => x.Active)).Count());
+            Assert.Equal(3, this.testHarness.QueryDatabase<Car>(x => x.Active).Count());
 
             try
             {
@@ -51,7 +51,7 @@ namespace DataStore.Tests.Tests.AzureOnly
                 this.docDbCollectionSettings.EnableCrossParitionQueries = false;
 
                 //this fails because QueryDatabase() is not partition aware 
-                this.testHarness.QueryDatabase<Car>(query => query.Where(x => x.Active));
+                this.testHarness.QueryDatabase<Car>(x => x.Active);
 
                 Assert.True(false); //never hit this
             }

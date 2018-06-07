@@ -1,13 +1,13 @@
-﻿namespace DataStore
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using global::DataStore.Interfaces;
-    using global::DataStore.Interfaces.LowLevel;
-    using global::DataStore.Models.PureFunctions.Extensions;
+﻿using DataStore.Interfaces;
+using DataStore.Interfaces.LowLevel;
+using DataStore.Models.PureFunctions.Extensions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
+namespace DataStore
+{
     public class InMemoryDocumentRepository : IDocumentRepository
     {
         public List<IAggregate> Aggregates { get; set; } = new List<IAggregate>();
@@ -19,11 +19,6 @@
             return Task.CompletedTask;
         }
 
-        public IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
-        {
-            //clone otherwise its to easy to change the referenced object in test code affecting results
-            return Aggregates.Where(x => x.schema == typeof(T).FullName).Cast<T>().Clone().AsQueryable();
-        }
 
         public Task DeleteHardAsync<T>(IDataStoreWriteOperation<T> aggregateHardDeleted) where T : class, IAggregate, new()
         {
@@ -49,10 +44,23 @@
             Aggregates.Clear();
         }
 
-        public Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried)
+        public Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried) where T : class, IAggregate, new()
         {
             //clone otherwise its to easy to change the referenced object in test code affecting results
-            var result = aggregatesQueried.Query.ToList().Clone().AsEnumerable();
+            var aggregates = Aggregates.Where(x => x.schema == typeof(T).FullName).Cast<T>().Clone();
+
+            var result = aggregates.AsQueryable().Where(aggregatesQueried.Query).AsEnumerable();
+
+            return Task.FromResult(result);
+        }
+
+
+        public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
+        {
+            //clone otherwise its to easy to change the referenced object in test code affecting results
+            var aggregates = Aggregates.Where(x => x.schema == typeof(TQuery).FullName).Cast<TQuery>().Clone();
+
+            var result = aggregates.AsQueryable().Where(aggregatesQueried.Query).Select(aggregatesQueried.Select).AsEnumerable();
 
             return Task.FromResult(result);
         }
@@ -78,5 +86,6 @@
 
             return Task.CompletedTask;
         }
+
     }
 }

@@ -5,14 +5,13 @@
     using System.Linq.Expressions;
     using DataStore.Interfaces;
 
-    public class TransformationQueriedOperation<TQuery, TResult> : IDataStoreReadTransformOperation<TQuery, TResult>
+    public class ReadQueriedOperation<T> : IDataStoreReadFromQueryable<T>
     {
-        public TransformationQueriedOperation(string methodCalled, Expression<Func<TQuery, bool>> query, Expression<Func<TQuery, TResult>> select)
+        public ReadQueriedOperation(string methodCalled, Expression<Func<T, bool>> query)
         {
             MethodCalled = methodCalled;
-            TypeName = typeof(TQuery).FullName;
+            TypeName = typeof(T).FullName;
             Query = query;
-            Select = select;
             Created = DateTime.UtcNow;
         }
 
@@ -20,9 +19,7 @@
 
         public string MethodCalled { get; set; }
 
-        public Expression<Func<TQuery, bool>> Query { get; set; }
-
-        public Expression<Func<TQuery, TResult>> Select { get; set; }
+        public Expression<Func<T, bool>> Query { get; set; }
 
         public double StateOperationCost { get; set; }
 

@@ -5,6 +5,7 @@
     using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
+    using CircuitBoard.Messages;
     using DataStore.Impl.DocumentDb.Config;
     using DataStore.Interfaces;
     using DataStore.Interfaces.LowLevel;
@@ -41,20 +42,6 @@
             aggregateAdded.StateOperationCost = result.RequestCharge;
         }
 
-        public IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
-        {
-            var name = typeof(T).FullName;
-            var query = this.documentClient.CreateDocumentQuery<T>(
-                this.config.CollectionSelfLink(),
-                new FeedOptions
-                {
-                    EnableCrossPartitionQuery = this.config.CollectionSettings.EnableCrossParitionQueries,
-                    MaxDegreeOfParallelism = -1,
-                    MaxBufferedItemCount = -1
-                }).Where(item => item.schema == name);
-            return query;
-        }
-
         public async Task DeleteHardAsync<T>(IDataStoreWriteOperation<T> aggregateHardDeleted) where T : class, IAggregate, new()
         {
             var docLink = CreateDocumentSelfLinkFromId(aggregateHardDeleted.Model.id);
@@ -86,17 +73,45 @@
             this.documentClient.Dispose();
         }
 
-        public async Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried)
+        public async Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried) where T : class, IAggregate, new()
+        {
+            var query = CreateDocumentQuery<T>().Where(aggregatesQueried.Query);
+            var documentQuery = query.AsDocumentQuery();
+            return await ExecuteQueryAsyncInternal<T>(documentQuery, aggregatesQueried);
+        }
+
+        public async Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
+        {
+            var query = CreateDocumentQuery<TQuery>().Where(aggregatesQueried.Query).Select(aggregatesQueried.Select);
+            var documentQuery = query.AsDocumentQuery();
+            return await ExecuteQueryAsyncInternal(documentQuery, aggregatesQueried);
+        }
+
+        private IQueryable<T> CreateDocumentQuery<T>() where T : class, IAggregate, new()
+        {
+            var name = typeof(T).FullName;
+
+            var query = this.documentClient.CreateDocumentQuery<T>(
+                this.config.CollectionSelfLink(),
+                new FeedOptions
+                {
+                    EnableCrossPartitionQuery = this.config.CollectionSettings.EnableCrossParitionQueries,
+                    MaxDegreeOfParallelism = -1,
+                    MaxBufferedItemCount = -1
+                }).Where(item => item.schema == name);
+
+            return query;
+        }
+
+        private async Task<IEnumerable<T>> ExecuteQueryAsyncInternal<T>(IDocumentQuery<T> documentQuery, IStateOperation stateOperation)
         {
             var results = new List<T>();
-
-            var documentQuery = aggregatesQueried.Query.AsDocumentQuery();
 
             while (documentQuery.HasMoreResults)
             {
                 var result = await DocumentDbUtils.ExecuteWithRetries(() => documentQuery.ExecuteNextAsync<T>()).ConfigureAwait(false);
 
-                aggregatesQueried.StateOperationCost += result.RequestCharge;
+                stateOperation.StateOperationCost += result.RequestCharge;
 
                 results.AddRange(result);
             }
@@ -171,5 +186,7 @@
             var docLink = UriFactory.CreateDocumentUri(this.config.DatabaseName, this.config.CollectionSettings.CollectionName, id.ToString());
             return docLink;
         }
+
+
     }
 }
