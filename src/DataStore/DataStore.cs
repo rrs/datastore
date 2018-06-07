@@ -223,8 +223,7 @@
             var historyIndexRecord = (await messageAggregator
                                            .CollectAndForward(
                                                new AggregatesQueriedOperation<AggregateHistory<T>>(
-                                                   methodName,
-                                                   DsConnection.CreateDocumentQuery<AggregateHistory<T>>().AsQueryable().Where(h => h.AggregateId == model.id)))
+                                                   methodName, h => h.AggregateId == model.id))
                                            .To(DsConnection.ExecuteQuery).ConfigureAwait(false)).SingleOrDefault();
 
 
