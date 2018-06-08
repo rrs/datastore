@@ -5,7 +5,7 @@
     using System.Linq.Expressions;
     using DataStore.Interfaces;
 
-    public class TransformationQueriedOperation<TQuery, TResult> : IDataStoreReadTransformOperation<TQuery, TResult>
+    public class TransformationQueriedOperation<TQuery, TResult> : IDataStoreReadTransformFromQueryable<TQuery, TResult>
     {
         public TransformationQueriedOperation(string methodCalled, Expression<Func<TQuery, bool>> query, Expression<Func<TQuery, TResult>> select)
         {

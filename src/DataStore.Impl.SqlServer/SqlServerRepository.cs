@@ -91,21 +91,18 @@
         {
             var queryable = CreateDocumentQuery<T>().AsQueryable();
 
-            var results = aggregatesQueried.Query == null ? queryable : queryable.Where(aggregatesQueried.Query);
+            queryable = aggregatesQueried.Query == null ? queryable : queryable.Where(aggregatesQueried.Query);
 
-            return Task.FromResult(results.AsEnumerable());
-        }
-
-        public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
-        {
-            var results = CreateDocumentQuery<TQuery>().AsQueryable().Select(aggregatesQueried.Select);
-
-            return Task.FromResult(results.AsEnumerable());
+            return Task.FromResult(queryable.AsEnumerable());
         }
 
         public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformFromQueryable<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
         {
-            var results = CreateDocumentQuery<TQuery>().AsQueryable().Where(aggregatesQueried.Query).Select(aggregatesQueried.Select);
+            var queryable = CreateDocumentQuery<TQuery>().AsQueryable();
+
+            queryable = aggregatesQueried.Query == null ? queryable : queryable.Where(aggregatesQueried.Query);
+
+            var results = queryable.Select(aggregatesQueried.Select);
 
             return Task.FromResult(results.AsEnumerable());
         }

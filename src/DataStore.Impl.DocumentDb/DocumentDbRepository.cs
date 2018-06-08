@@ -78,21 +78,14 @@
             var query = CreateDocumentQuery<T>();
             query = aggregatesQueried.Query == null ? query : query.Where(aggregatesQueried.Query);
             var documentQuery = query.AsDocumentQuery();
-            return await ExecuteQueryAsyncInternal<T>(documentQuery, aggregatesQueried);
-        }
-
-        public async Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
-        {
-            var query = CreateDocumentQuery<TQuery>().Select(aggregatesQueried.Select);
-            var documentQuery = query.AsDocumentQuery();
             return await ExecuteQueryAsyncInternal(documentQuery, aggregatesQueried);
         }
 
-
         public async  Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformFromQueryable<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
         {
-            var query = CreateDocumentQuery<TQuery>().Where(aggregatesQueried.Query).Select(aggregatesQueried.Select);
-            var documentQuery = query.AsDocumentQuery();
+            var query = CreateDocumentQuery<TQuery>();
+            query = aggregatesQueried.Query == null ? query : query.Where(aggregatesQueried.Query);
+            var documentQuery = query.Select(aggregatesQueried.Select).AsDocumentQuery();
             return await ExecuteQueryAsyncInternal(documentQuery, aggregatesQueried);
         }
 

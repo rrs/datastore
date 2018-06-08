@@ -58,17 +58,6 @@ namespace DataStore
             return Task.FromResult(result);
         }
 
-
-        public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
-        {
-            //clone otherwise its to easy to change the referenced object in test code affecting results
-            var aggregates = Aggregates.Where(x => x.schema == typeof(TQuery).FullName).Cast<TQuery>().Clone();
-
-            var result = aggregates.AsQueryable().Select(aggregatesQueried.Select).AsEnumerable();
-
-            return Task.FromResult(result);
-        }
-
         public Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformFromQueryable<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new()
         {
             //clone otherwise its to easy to change the referenced object in test code affecting results

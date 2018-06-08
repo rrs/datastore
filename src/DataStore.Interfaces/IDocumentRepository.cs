@@ -16,8 +16,6 @@ namespace DataStore.Interfaces
 
         Task<IEnumerable<T>> ExecuteQuery<T>(IDataStoreReadFromQueryable<T> aggregatesQueried) where T : class, IAggregate, new();
 
-        Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformOperation<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new();
-
         Task<IEnumerable<TResult>> ExecuteQuery<TQuery, TResult>(IDataStoreReadTransformFromQueryable<TQuery, TResult> aggregatesQueried) where TQuery : class, IAggregate, new();
 
         Task<bool> Exists(IDataStoreReadById aggregateQueriedById);
